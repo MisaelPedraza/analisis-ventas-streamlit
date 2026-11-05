@@ -7,3 +7,16 @@
 !session1/
 !session1/activity1_starter/
 !session1/activity1_starter/app.py
+!session1/activity2_solution/
+!session1/activity2_solution/app.py
+!session1/activity2_solution/data/
+!session1/activity2_solution/data/__init__.py
+!session1/activity2_solution/data/loaders.py
+!session1/activity2_solution/components/
+!session1/activity2_solution/components/__init__.py
+!session1/activity2_solution/components/charts.py
+.venv/
+__pycache__/
+*.pyc
+.env
+.streamlit/secrets.toml
