@@ -1,9 +1,5 @@
-*
-!.gitignore
-!README.md
-!requirements.txt
-!make_data.py
-!sales_daily.csv
-!session1/
-!session1/activity1_starter/
-!session1/activity1_starter/app.py
+.venv/
+__pycache__/
+*.pyc
+.env
+.streamlit/secrets.toml
