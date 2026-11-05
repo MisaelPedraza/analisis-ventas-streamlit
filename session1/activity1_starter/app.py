@@ -1,3 +1,4 @@
+"""Activity 1: interactive sales explorer based on the starter kit."""
 from pathlib import Path
 
 import pandas as pd
@@ -5,42 +6,16 @@ import plotly.express as px
 import streamlit as st
 
 
-st.set_page_config(page_title="Ventas diarias", page_icon="📊", layout="wide")
+DATA = Path(__file__).resolve().parents[2] / "sales_daily.csv"
 
-CSV_PATH = Path(__file__).resolve().parents[2] / "sales_daily.csv"
+st.set_page_config(page_title="Sales Explorer", layout="wide")
+st.title("Sales Explorer")
 
-
-@st.cache_data
-def load_data() -> pd.DataFrame:
-    if not CSV_PATH.exists():
-        raise FileNotFoundError(
-            f"No se encontró el archivo de datos: {CSV_PATH}. "
-            "Ejecuta `python make_data.py` primero."
-        )
-
-    data = pd.read_csv(CSV_PATH, parse_dates=["date"])
-    required_columns = {
-        "date",
-        "region",
-        "category",
-        "sku",
-        "units",
-        "revenue",
-    }
-    missing_columns = required_columns.difference(data.columns)
-    if missing_columns:
-        missing = ", ".join(sorted(missing_columns))
-        raise ValueError(f"Faltan columnas requeridas en el CSV: {missing}")
-    return data
-
-
-st.title("Dashboard de ventas diarias")
-
-try:
-    df = load_data()
-except (FileNotFoundError, ValueError) as error:
-    st.error(str(error))
+if not DATA.exists():
+    st.error(f"No se encontró el archivo de datos: {DATA}")
     st.stop()
+
+df = pd.read_csv(DATA, parse_dates=["date"])
 
 with st.sidebar:
     st.header("Filtros")
@@ -60,45 +35,30 @@ filtered_df = df[
     & df["category"].isin(selected_categories)
 ]
 
-st.subheader("Unidades diarias")
-daily_units = (
-    filtered_df.groupby("date", as_index=False)["units"]
-    .sum()
-    .sort_values("date")
-)
-units_chart = px.line(
-    daily_units,
-    x="date",
-    y="units",
-    markers=True,
-    labels={"date": "Fecha", "units": "Unidades"},
-)
-st.plotly_chart(units_chart, use_container_width=True)
-
-total_units = int(filtered_df["units"].sum())
-total_revenue = float(filtered_df["revenue"].sum())
-sku_count = int(filtered_df["sku"].nunique())
+daily = filtered_df.groupby("date", as_index=False)["units"].sum()
+fig = px.line(daily, x="date", y="units", title="Daily units")
+st.plotly_chart(fig, width="stretch")
 
 units_col, revenue_col, sku_col = st.columns(3)
-units_col.metric("Unidades", f"{total_units:,}")
-revenue_col.metric("Ingresos", f"${total_revenue:,.2f}")
-sku_col.metric("Número de SKUs", f"{sku_count:,}")
+units_col.metric("Total units", f"{filtered_df['units'].sum():,.0f}")
+revenue_col.metric("Revenue", f"${filtered_df['revenue'].sum():,.2f}")
+sku_col.metric("# SKUs", f"{filtered_df['sku'].nunique():,}")
 
-st.subheader("Top 10 SKUs por ingresos")
+st.subheader("Top 10 SKUs by revenue")
 top_skus = (
     filtered_df.groupby("sku", as_index=False)["revenue"]
     .sum()
-    .sort_values("revenue", ascending=False)
-    .head(10)
+    .nlargest(10, "revenue")
+    .sort_values("revenue")
 )
-sku_chart = px.bar(
-    top_skus.sort_values("revenue"),
+sku_fig = px.bar(
+    top_skus,
     x="revenue",
     y="sku",
     orientation="h",
-    labels={"revenue": "Ingresos", "sku": "SKU"},
+    labels={"revenue": "Revenue", "sku": "SKU"},
 )
-st.plotly_chart(sku_chart, use_container_width=True)
+st.plotly_chart(sku_fig, width="stretch")
 
-with st.expander("Mostrar datos filtrados"):
-    st.dataframe(filtered_df, use_container_width=True, hide_index=True)
+with st.expander("Show filtered rows"):
+    st.dataframe(filtered_df, width="stretch", hide_index=True)

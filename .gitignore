@@ -1,5 +1,6 @@
 *
 !.gitignore
+!README.md
 !requirements.txt
 !make_data.py
 !sales_daily.csv
